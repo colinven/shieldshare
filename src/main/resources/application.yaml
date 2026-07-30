@@ -22,3 +22,7 @@ spring:
     locations: classpath:db/migration
     table: flyway_schema_history
     baseline-on-migrate: true
+
+server:
+  servlet:
+    context-path: /api/v1
