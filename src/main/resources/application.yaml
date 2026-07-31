@@ -26,3 +26,11 @@ spring:
 server:
   servlet:
     context-path: /api/v1
+
+app:
+  size-caps:
+    max-content-bytes: 1048576 # 1 MiB (content cap). used only for client-side UX only
+    max-request-bytes: 1573000 # 1.5 MiB + headroom for base64 overhead, metadata, JSON envelope
+    max-blob-bytes: 1052701 # 1 MiB + headroom (content, metadata, version byte, iv, GCM tag)
+  encryption-version-byte: "0x00"
+  ttl-options-seconds: "300,3600,86400,604800" # 5m, 1h, 24h, 7d
