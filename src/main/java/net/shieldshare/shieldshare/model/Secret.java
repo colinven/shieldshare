@@ -1,43 +1,12 @@
 package net.shieldshare.shieldshare.model;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.Instant;
 
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
-@Table(name = "secrets")
-public class Secret {
-
-    public enum State {
-        ACTIVE,
-        CONSUMED
-    }
-
-    @Id
-    @Column(name = "secret_id", length = 24)
-    String id;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    State state;
-
-    @Column(name = "payload", nullable = false)
-    byte[] payload;
-
-    @Column(name = "created_at", nullable = false)
-    Instant createdAt;
-
-    @Column(name = "expires_at", nullable = false)
-    Instant expiresAt;
-
-    @Column(name = "consumed_at")
-    Instant consumedAt;
-}
+public record Secret(
+        String id,
+        SecretState state,
+        byte[] payload,
+        Instant createdAt,
+        Instant expiresAt,
+        Instant consumedAt
+) {}
