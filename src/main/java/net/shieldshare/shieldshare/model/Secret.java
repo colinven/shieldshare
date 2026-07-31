@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
@@ -33,11 +34,11 @@ public class Secret {
     byte[] payload;
 
     @Column(name = "created_at", nullable = false)
-    LocalDateTime createdAt;
+    Instant createdAt;
 
     @Column(name = "expires_at", nullable = false)
-    LocalDateTime expiresAt;
+    Instant expiresAt;
 
     @Column(name = "consumed_at")
-    LocalDateTime consumedAt;
+    Instant consumedAt;
 }
