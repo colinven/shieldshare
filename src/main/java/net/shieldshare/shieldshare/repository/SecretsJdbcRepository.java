@@ -21,12 +21,12 @@ public class SecretsJdbcRepository {
      * @param ttlSeconds int representing number of seconds until record should expire
      * @return an Instant value representing the expiration of the newly inserted row, or empty Optional on ID collision.
      */
-    Optional<Instant> insert(String id, byte[] payload, int ttlSeconds) {
+    public Optional<Instant> insert(String id, byte[] payload, int ttlSeconds) {
         return jdbc.sql("""
-                INSERT INTO secrets (id, state, payload, created_at, expires_at)
-                VALUES (:id, 'ACTIVE', :payload, now(), make_interval(secs => :ttl)
-                ON CONFLICT (id) DO NOTHING
-                RETURNING expires_at
+                INSERT INTO secrets (secret_id, state, payload, created_at, expires_at)
+                VALUES (:id, 'ACTIVE', :payload, now(), now() + make_interval(secs => :ttl))
+                ON CONFLICT (secret_id) DO NOTHING
+                RETURNING expires_at;
                 """)
                 .param("id", id)
                 .param("payload", payload)
