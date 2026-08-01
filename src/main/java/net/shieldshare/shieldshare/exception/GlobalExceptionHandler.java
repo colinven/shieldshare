@@ -16,4 +16,11 @@ public class GlobalExceptionHandler {
         ErrorResponse response = new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), e.getMessage());
         return new ResponseEntity<>(response, status);
     }
+
+    @ExceptionHandler(SecretInsertionException.class)
+    public ResponseEntity<ErrorResponse> handleSecretInsertionException(SecretInsertionException e) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        ErrorResponse response = new ErrorResponse(LocalDateTime.now(), status.value(), status.getReasonPhrase(), e.getMessage());
+        return new ResponseEntity<>(response, status);
+    }
 }
