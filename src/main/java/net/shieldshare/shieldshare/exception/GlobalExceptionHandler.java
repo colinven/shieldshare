@@ -50,4 +50,8 @@ public class GlobalExceptionHandler {
         return generateErrorResponse(HttpStatus.BAD_REQUEST, e);
     }
 
+    @ExceptionHandler(InvalidSecretException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSecretException(InvalidSecretException e) {
+        return generateErrorResponse(HttpStatus.NOT_FOUND, e);
+    }
 }
