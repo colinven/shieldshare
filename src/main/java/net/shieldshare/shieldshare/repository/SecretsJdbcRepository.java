@@ -34,4 +34,20 @@ public class SecretsJdbcRepository {
                 .query(Instant.class)
                 .optional();
     }
+
+    /**
+     * Peek to see if an ACTIVE, NON-EXPIRED secret exists in the database by ID. Use this method solely to prove
+     * existence, without consuming the secret itself or returning the payload.
+     * @param secretId the id to search for
+     * @return mirrors back the ID if a row is found, or an empty Optional if no valid row is found
+     */
+    public Optional<String> validate(String secretId) {
+        return jdbc.sql("""
+                SELECT secret_id FROM secrets
+                WHERE secret_id = :id AND state = 'ACTIVE' AND expires_at > now();
+                """)
+                .param("id", secretId)
+                .query(String.class)
+                .optional();
+    }
 }

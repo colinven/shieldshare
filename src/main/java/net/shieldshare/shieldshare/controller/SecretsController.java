@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
 import net.shieldshare.shieldshare.dto.response.CreateSecretResponse;
+import net.shieldshare.shieldshare.dto.response.SecretValidationResponse;
 import net.shieldshare.shieldshare.service.SecretsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,4 +24,8 @@ public class SecretsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(secretsService.createSecret(request));
     }
 
+    @GetMapping("/validate/{secretId}")
+    public ResponseEntity<SecretValidationResponse> validateSecret(@PathVariable String secretId) {
+        return ResponseEntity.ok(secretsService.validateSecret(secretId));
+    }
 }

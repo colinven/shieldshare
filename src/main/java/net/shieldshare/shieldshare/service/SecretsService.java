@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
 import net.shieldshare.shieldshare.dto.response.CreateSecretResponse;
+import net.shieldshare.shieldshare.dto.response.SecretValidationResponse;
 import net.shieldshare.shieldshare.exception.MalformedPayloadException;
 import net.shieldshare.shieldshare.exception.OversizedPayloadException;
 import net.shieldshare.shieldshare.exception.SecretInsertionException;
@@ -65,6 +66,16 @@ public class SecretsService {
         would drift ever so slightly. Since record expiration is vital to the application, this is the right way to go. */
         log.info("Secret insertion successful for ID {}", secretId);
         return new CreateSecretResponse(secretId, secretExpiration.get());
+    }
+
+    public SecretValidationResponse validateSecret(String secretId) {
+        Optional<String> retrievedId = secretsRepository.validate(secretId);
+        if (retrievedId.isEmpty()) {
+            log.warn("Failed to validate secret with ID {}", secretId);
+        } else {
+            log.info("Successfully validated secret with ID {}", secretId);
+        }
+        return new SecretValidationResponse(retrievedId.isPresent());
     }
 
     private String generateSecretId() {
