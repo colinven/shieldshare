@@ -50,4 +50,22 @@ public class SecretsJdbcRepository {
                 .query(String.class)
                 .optional();
     }
+
+    /**
+     * Fetch a binary payload from the database by ID and set that row's state to CONSUMED, making it inaccessible to
+     * future queries, and a candidate for removal by a background sweeper job.
+     * @param secretId the ID of the row to update
+     * @return byte[] containing the binary payload of the secret
+     */
+    public Optional<byte[]> fetchAndConsume(String secretId) {
+        return jdbc.sql("""
+                UPDATE secrets
+                SET (state, consumed_at) = ('CONSUMED', now())
+                WHERE secret_id = :id AND state = 'ACTIVE' AND expires_at > now()
+                RETURNING payload
+                """)
+                .param("id", secretId)
+                .query(byte[].class)
+                .optional();
+    }
 }

@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
 import net.shieldshare.shieldshare.dto.response.CreateSecretResponse;
+import net.shieldshare.shieldshare.dto.response.SecretPayloadResponse;
 import net.shieldshare.shieldshare.dto.response.SecretValidationResponse;
+import net.shieldshare.shieldshare.exception.InvalidSecretException;
 import net.shieldshare.shieldshare.exception.MalformedPayloadException;
 import net.shieldshare.shieldshare.exception.OversizedPayloadException;
 import net.shieldshare.shieldshare.exception.SecretInsertionException;
@@ -84,6 +86,18 @@ public class SecretsService {
             log.info("Successfully validated secret with ID {}", secretId);
         }
         return new SecretValidationResponse(retrievedId.isPresent());
+    }
+
+    public SecretPayloadResponse fetchSecret(String secretId) {
+        Optional<byte[]> payload = secretsRepository.fetchAndConsume(secretId);
+        if (payload.isEmpty()) {
+            // Secret is expired, already consumed, or ID is invalid
+            log.warn("Failed attempt to fetch secret with ID {}", secretId);
+            throw new InvalidSecretException("Secret with ID " + secretId + " does not exist");
+        }
+        String base64Encoded = Base64.getEncoder().withoutPadding().encodeToString(payload.get());
+        log.info("Successfully fetched secret with ID {}", secretId);
+        return new SecretPayloadResponse(base64Encoded);
     }
 
     private String generateSecretId() {
