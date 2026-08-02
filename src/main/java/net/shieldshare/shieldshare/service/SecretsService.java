@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -28,10 +29,17 @@ public class SecretsService {
     @Value("${app.size-caps.max-blob-bytes}")
     private long maxBlobBytes;
 
+    @Value("${app.ttl-options-seconds}")
+    private List<Integer> ttlOptions;
+
     public CreateSecretResponse createSecret(CreateSecretRequest request) {
 
         final int MAX_INSERTION_RETRIES = 3;
         int insertionAttempts = 0;
+
+        if (!ttlOptions.contains(request.ttlSeconds())) {
+            throw new MalformedPayloadException("Invalid TTL option provided");
+        }
 
         // Decode Base64 payload and check that it doesn't violate blob size limit
         byte[] binaryData;
