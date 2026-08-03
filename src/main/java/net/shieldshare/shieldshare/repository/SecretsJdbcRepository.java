@@ -70,7 +70,7 @@ public class SecretsJdbcRepository {
     }
 
     /**
-     * Sweep the database and remove any rows whose state is CONSUMED, or expiry date has already passed. Bounded to 500/sweep.
+     * Sweep the database and remove any rows whose state is CONSUMED, or expiry date has already passed. Bounded to 5000/sweep.
      * @return the number of rows deleted
      */
     public int deleteConsumedOrExpired() {
