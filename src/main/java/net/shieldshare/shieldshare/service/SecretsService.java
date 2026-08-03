@@ -2,6 +2,7 @@ package net.shieldshare.shieldshare.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.shieldshare.shieldshare.config.AppProperties;
 import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
 import net.shieldshare.shieldshare.dto.response.CreateSecretResponse;
 import net.shieldshare.shieldshare.dto.response.SecretPayloadResponse;
@@ -11,13 +12,11 @@ import net.shieldshare.shieldshare.exception.MalformedPayloadException;
 import net.shieldshare.shieldshare.exception.OversizedPayloadException;
 import net.shieldshare.shieldshare.exception.SecretInsertionException;
 import net.shieldshare.shieldshare.repository.SecretsJdbcRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -27,19 +26,14 @@ public class SecretsService {
 
     private final SecretsJdbcRepository secretsRepository;
     private final SecureRandom secureRandom;
-
-    @Value("${app.size-caps.max-blob-bytes}")
-    private long maxBlobBytes;
-
-    @Value("${app.ttl-options-seconds}")
-    private List<Integer> ttlOptions;
+    private final AppProperties appProperties;
 
     public CreateSecretResponse createSecret(CreateSecretRequest request) {
 
         final int MAX_INSERTION_RETRIES = 3;
         int insertionAttempts = 0;
 
-        if (!ttlOptions.contains(request.ttlSeconds())) {
+        if (!appProperties.ttlOptionsSeconds().contains(request.ttlSeconds())) {
             throw new MalformedPayloadException("Invalid TTL option provided");
         }
 
@@ -51,7 +45,7 @@ public class SecretsService {
             log.warn("Could not decode incoming payload: {}", e.getMessage());
             throw new MalformedPayloadException("Could not decode payload: " + e.getMessage());
         }
-        if (binaryData.length > maxBlobBytes) {
+        if (binaryData.length > appProperties.sizeCaps().maxBlobBytes()) {
             log.info("Oversized payload rejected for creation. Length: {}", binaryData.length);
             throw new OversizedPayloadException("Payload size exceeds max allowed bytes");
         }
