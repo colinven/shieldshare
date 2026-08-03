@@ -76,8 +76,7 @@ public class SecretsJdbcRepository {
     public int deleteConsumedOrExpired() {
         return jdbc.sql("""
                 DELETE FROM secrets
-                WHERE state = 'CONSUMED' OR expires_at < now()
-                LIMIT 5000;
+                WHERE ctid IN (SELECT ctid FROM secrets WHERE state = 'CONSUMED' OR expires_at < now() LIMIT 5000);
                 """)
                 .update();
     }
