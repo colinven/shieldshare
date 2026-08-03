@@ -68,4 +68,17 @@ public class SecretsJdbcRepository {
                 .query(byte[].class)
                 .optional();
     }
+
+    /**
+     * Sweep the database and remove any rows whose state is CONSUMED, or expiry date has already passed. Bounded to 500/sweep.
+     * @return the number of rows deleted
+     */
+    public int deleteConsumedOrExpired() {
+        return jdbc.sql("""
+                DELETE FROM secrets
+                WHERE state = 'CONSUMED' OR expires_at < now()
+                LIMIT 5000;
+                """)
+                .update();
+    }
 }
