@@ -11,12 +11,16 @@ import net.shieldshare.shieldshare.exception.InvalidSecretException;
 import net.shieldshare.shieldshare.exception.MalformedPayloadException;
 import net.shieldshare.shieldshare.exception.OversizedPayloadException;
 import net.shieldshare.shieldshare.exception.SecretInsertionException;
+import net.shieldshare.shieldshare.model.AuditEvent;
+import net.shieldshare.shieldshare.model.Secret;
+import net.shieldshare.shieldshare.repository.AuditLog;
 import net.shieldshare.shieldshare.repository.SecretsJdbcRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -27,8 +31,10 @@ public class SecretsService {
     private final SecretsJdbcRepository secretsRepository;
     private final SecureRandom secureRandom;
     private final AppProperties appProperties;
+    private final AuditLog auditLog;
 
-    public CreateSecretResponse createSecret(CreateSecretRequest request) {
+    @Transactional
+    public CreateSecretResponse createSecret(CreateSecretRequest request, String clientIp) {
 
         final int MAX_INSERTION_RETRIES = 3;
         int insertionAttempts = 0;
@@ -52,24 +58,24 @@ public class SecretsService {
         String secretId = generateSecretId();
         /*Attempt to insert secret into DB. *Unlikely*, but if an ID collision occurs,
         retry with new ID up to MAX_INSERTION_RETRIES. */
-        Optional<Instant> secretExpiration = secretsRepository.insert(secretId, binaryData, request.ttlSeconds());
+        Optional<Secret> insertedSecret = secretsRepository.insert(secretId, binaryData, request.ttlSeconds());
         insertionAttempts++;
-        while (secretExpiration.isEmpty() && insertionAttempts < MAX_INSERTION_RETRIES) {
+        while (insertedSecret.isEmpty() && insertionAttempts < MAX_INSERTION_RETRIES) {
             log.warn("Secret insertion attempt {} failed for ID {}. Retrying...", insertionAttempts, secretId);
             secretId = generateSecretId();
-            secretExpiration = secretsRepository.insert(secretId, binaryData, request.ttlSeconds());
+            insertedSecret = secretsRepository.insert(secretId, binaryData, request.ttlSeconds());
             insertionAttempts++;
         }
         // If insertion still failed after retries, we have a different problem. return 500
-        if (secretExpiration.isEmpty()) {
+        if (insertedSecret.isEmpty()) {
             log.error("Secret insertion failed after {} attempts", insertionAttempts);
             throw new SecretInsertionException("Failed to insert secret into database");
         }
-        /* Here we use the expiration value returned from the DB as the source of truth to the user. It more accurately
-        represents the exact moment that the database transaction began. If we were to recompute in the JVM, the two
-        would drift ever so slightly. Since record expiration is vital to the application, this is the right way to go. */
-        log.info("Secret insertion successful for ID {}", secretId);
-        return new CreateSecretResponse(secretId, secretExpiration.get());
+        Secret secret = insertedSecret.get();
+
+        auditLog.record(AuditEvent.secretCreated(secret.id(), clientIp, secret.createdAt()));
+        log.info("Secret insertion successful for ID {}", secret.id());
+        return new CreateSecretResponse(secret.id(), secret.expiresAt());
     }
 
     public SecretValidationResponse validateSecret(String secretId) {
@@ -92,6 +98,26 @@ public class SecretsService {
         String base64Encoded = Base64.getEncoder().withoutPadding().encodeToString(payload.get());
         log.info("Successfully fetched secret with ID {}", secretId);
         return new SecretPayloadResponse(base64Encoded);
+    }
+
+    @Transactional
+    public void deleteStaleSecrets() {
+        List<String> purgedExpiredIds = secretsRepository.deleteExpired();
+        List<String> purgedConsumedIds = secretsRepository.deleteConsumed();
+        purgedExpiredIds.stream()
+                .map(AuditEvent::secretDeletedExpired)
+                .toList()
+                .forEach(auditLog::record);
+        purgedConsumedIds.stream()
+                .map(AuditEvent::secretDeletedConsumed)
+                .toList()
+                .forEach(auditLog::record);
+        if (!purgedExpiredIds.isEmpty()) {
+            log.info("Deleted {} expired rows from secrets table", purgedExpiredIds.size());
+        }
+        if (!purgedConsumedIds.isEmpty()) {
+            log.info("Deleted {} consumed rows from secrets table", purgedConsumedIds.size());
+        }
     }
 
     private String generateSecretId() {

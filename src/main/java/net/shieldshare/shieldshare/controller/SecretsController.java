@@ -1,5 +1,6 @@
 package net.shieldshare.shieldshare.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
@@ -21,8 +22,9 @@ public class SecretsController {
     private final SecretsService secretsService;
 
     @PostMapping("/create")
-    public ResponseEntity<CreateSecretResponse> createSecret(@Valid @RequestBody CreateSecretRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(secretsService.createSecret(request));
+    public ResponseEntity<CreateSecretResponse> createSecret(@Valid @RequestBody CreateSecretRequest request,
+                                                             HttpServletRequest http) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(secretsService.createSecret(request, http.getRemoteAddr()));
     }
 
     @GetMapping("/validate/{secretId}")
