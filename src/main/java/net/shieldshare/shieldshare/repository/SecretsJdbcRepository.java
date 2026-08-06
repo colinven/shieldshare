@@ -7,7 +7,7 @@ import net.shieldshare.shieldshare.model.SecretState;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,8 +41,8 @@ public class SecretsJdbcRepository {
                         rs.getString("secret_id"),
                         SecretState.valueOf(rs.getString("state")),
                         null,
-                        rs.getObject("created_at", Instant.class),
-                        rs.getObject("expires_at", Instant.class),
+                        rs.getObject("created_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
                         null
                 ))
                 .optional();
