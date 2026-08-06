@@ -28,8 +28,9 @@ public class SecretsController {
     }
 
     @GetMapping("/validate/{secretId}")
-    public ResponseEntity<SecretValidationResponse> validateSecret(@PathVariable String secretId) {
-        return ResponseEntity.ok(secretsService.validateSecret(secretId));
+    public ResponseEntity<SecretValidationResponse> validateSecret(@PathVariable String secretId,
+                                                                   HttpServletRequest http) {
+        return ResponseEntity.ok(secretsService.validateSecret(secretId, http.getRemoteAddr()));
     }
 
     @GetMapping("/fetch/{secretId}")

@@ -78,11 +78,13 @@ public class SecretsService {
         return new CreateSecretResponse(secret.id(), secret.expiresAt());
     }
 
-    public SecretValidationResponse validateSecret(String secretId) {
+    @Transactional
+    public SecretValidationResponse validateSecret(String secretId, String clientIp) {
         Optional<String> retrievedId = secretsRepository.validate(secretId);
         if (retrievedId.isEmpty()) {
             log.warn("Failed to validate secret with ID {}", secretId);
         } else {
+            auditLog.record(AuditEvent.secretValidated(secretId, clientIp));
             log.info("Successfully validated secret with ID {}", secretId);
         }
         return new SecretValidationResponse(retrievedId.isPresent());
