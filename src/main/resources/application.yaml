@@ -8,6 +8,7 @@ spring:
     baseline-on-migrate: true
 
 server:
+  forward-headers-strategy: native # make request.getRemoteAddr() return the client ip, not the edge proxy ip
   servlet:
     context-path: /api/v1
 
@@ -18,3 +19,5 @@ app:
     max-blob-bytes: 1052701 # 1 MiB + headroom (content, metadata, version byte, iv, GCM tag)
   encryption-version-byte: "0x00"
   ttl-options-seconds: "300,3600,86400,604800" # 5m, 1h, 24h, 7d
+  sweeper:
+    pass-limit: 2500
