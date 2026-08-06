@@ -10,7 +10,7 @@ import java.util.List;
  *
  * @param sizeCaps payload size limits
  * @param ttlOptionsSeconds the only TTL values a client is allowed to request
- * @param
+ * @param sweeper config values for the database sweeper
  */
 @ConfigurationProperties("app")
 public record AppProperties(SizeCaps sizeCaps, List<Integer> ttlOptionsSeconds, Sweeper sweeper) {
