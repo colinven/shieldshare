@@ -20,7 +20,7 @@ public class AuditEvent {
     private String sourceIp;
     private Instant timestamp;
 
-    private enum EventType {
+    public enum EventType {
         SECRET_CREATED,
         SECRET_VALIDATED,
         SECRET_FETCHED_SUCCESS,
@@ -44,6 +44,7 @@ public class AuditEvent {
                 .eventType(EventType.SECRET_VALIDATED)
                 .secretId(secretId)
                 .sourceIp(sourceIp)
+                .timestamp(Instant.now())
                 .build();
     }
     public static AuditEvent secretFetchedSuccess(String secretId, String sourceIp) {
@@ -52,6 +53,7 @@ public class AuditEvent {
                 .eventType(EventType.SECRET_FETCHED_SUCCESS)
                 .secretId(secretId)
                 .sourceIp(sourceIp)
+                .timestamp(Instant.now())
                 .build();
     }
     public static AuditEvent secretFetchedFailure(String secretId, String sourceIp) {
@@ -60,6 +62,7 @@ public class AuditEvent {
                 .eventType(EventType.SECRET_FETCHED_FAILURE)
                 .secretId(secretId)
                 .sourceIp(sourceIp)
+                .timestamp(Instant.now())
                 .build();
     }
     public static AuditEvent secretDeletedExpired(String secretId) {
@@ -67,6 +70,7 @@ public class AuditEvent {
                 .eventId(UUID.randomUUID())
                 .eventType(EventType.SECRET_DELETED_EXPIRED)
                 .secretId(secretId)
+                .timestamp(Instant.now())
                 .build();
     }
     public static AuditEvent secretDeletedConsumed(String secretId) {
@@ -74,6 +78,7 @@ public class AuditEvent {
                 .eventId(UUID.randomUUID())
                 .eventType(EventType.SECRET_DELETED_CONSUMED)
                 .secretId(secretId)
+                .timestamp(Instant.now())
                 .build();
     }
 }
