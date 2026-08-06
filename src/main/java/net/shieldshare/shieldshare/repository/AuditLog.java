@@ -26,4 +26,16 @@ public class AuditLog {
                 .param("eventTimestamp", event.getTimestamp().atOffset(ZoneOffset.UTC))
                 .update();
     }
+
+    public int recordAccessAttempt(AuditEvent event) {
+        return jdbc.sql("""
+                INSERT INTO unsuccessful_access_attempts (event_id, resource_id, source_ip, event_timestamp)
+                VALUES (:eventId, :secretId, :sourceIp, :eventTimestamp)
+                """)
+                .param("eventId", event.getEventId())
+                .param("secretId", event.getSecretId())
+                .param("sourceIp", event.getSourceIp())
+                .param("eventTimestamp", event.getTimestamp().atOffset(ZoneOffset.UTC))
+                .update();
+    }
 }
