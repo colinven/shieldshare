@@ -5,6 +5,8 @@ import net.shieldshare.shieldshare.model.AuditEvent;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.time.ZoneOffset;
+
 @Repository
 @RequiredArgsConstructor
 public class AuditLog {
@@ -13,14 +15,15 @@ public class AuditLog {
 
     public int record(AuditEvent event) {
         return jdbc.sql("""
-                INSERT INTO audit_logs ( event_id, event_type, resource_id, source_ip, timestamp )
-                VALUES ( :eventId, :eventType, :secretId, :sourceIp, :timestamp )
+                INSERT INTO audit_logs (event_id, event_type, resource_id, source_ip, event_timestamp)
+                VALUES (:eventId, :eventType, :secretId, :sourceIp, :eventTimestamp)
                 """)
                 .param("eventId", event.getEventId())
-                .param("eventType", event.getEventType())
+                .param("eventType", event.getEventType().name())
                 .param("secretId", event.getSecretId())
                 .param("sourceIp", event.getSourceIp())
-                .param("timestamp", event.getTimestamp())
+                // pgjdbc can't infer a SQL type for Instant, so hand it an OffsetDateTime at UTC.
+                .param("eventTimestamp", event.getTimestamp().atOffset(ZoneOffset.UTC))
                 .update();
     }
 }
