@@ -88,14 +88,17 @@ public class SecretsService {
         return new SecretValidationResponse(retrievedId.isPresent());
     }
 
-    public SecretPayloadResponse fetchSecret(String secretId) {
+    @Transactional(noRollbackFor = InvalidSecretException.class)
+    public SecretPayloadResponse fetchSecret(String secretId, String clientIp) {
         Optional<byte[]> payload = secretsRepository.fetchAndConsume(secretId);
         if (payload.isEmpty()) {
             // Secret is expired, already consumed, or ID is invalid
+            auditLog.recordAccessAttempt(AuditEvent.secretFetchedFailure(secretId, clientIp));
             log.warn("Failed attempt to fetch secret with ID {}", secretId);
             throw new InvalidSecretException("Secret with ID " + secretId + " does not exist");
         }
         String base64Encoded = Base64.getEncoder().withoutPadding().encodeToString(payload.get());
+        auditLog.record(AuditEvent.secretFetchedSuccess(secretId, clientIp));
         log.info("Successfully fetched secret with ID {}", secretId);
         return new SecretPayloadResponse(base64Encoded);
     }
