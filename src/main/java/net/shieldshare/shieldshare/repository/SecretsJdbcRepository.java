@@ -1,10 +1,14 @@
 package net.shieldshare.shieldshare.repository;
 
 import lombok.RequiredArgsConstructor;
+import net.shieldshare.shieldshare.config.AppProperties;
+import net.shieldshare.shieldshare.model.Secret;
+import net.shieldshare.shieldshare.model.SecretState;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -12,6 +16,7 @@ import java.util.Optional;
 public class SecretsJdbcRepository {
 
     private final JdbcClient jdbc;
+    private final AppProperties appProperties;
 
     /**
      * Insert a row into the secrets table and gracefully handle ID collisions. If a collision occurs, this method will
@@ -19,19 +24,27 @@ public class SecretsJdbcRepository {
      * @param id 128-bit Base64 encoded String (22 chars)
      * @param payload AES encrypted binary blob
      * @param ttlSeconds int representing number of seconds until record should expire
-     * @return an Instant value representing the expiration of the newly inserted row, or empty Optional on ID collision.
+     * @return a Secret record mirroring the newly inserted row, or empty Optional on ID collision.
      */
-    public Optional<Instant> insert(String id, byte[] payload, int ttlSeconds) {
+    public Optional<Secret> insert(String id, byte[] payload, int ttlSeconds) {
         return jdbc.sql("""
                 INSERT INTO secrets (secret_id, state, payload, created_at, expires_at)
-                VALUES (:id, 'ACTIVE', :payload, now(), now() + make_interval(secs => :ttl))
+                VALUES (:id, :state, :payload, now(), now() + make_interval(secs => :ttl))
                 ON CONFLICT (secret_id) DO NOTHING
-                RETURNING expires_at;
+                RETURNING *;
                 """)
                 .param("id", id)
+                .param("state", SecretState.ACTIVE.name())
                 .param("payload", payload)
                 .param("ttl", ttlSeconds)
-                .query(Instant.class)
+                .query((rs, rowNum) -> new Secret(
+                        rs.getString("secret_id"),
+                        SecretState.valueOf(rs.getString("state")),
+                        null,
+                        rs.getObject("created_at", Instant.class),
+                        rs.getObject("expires_at", Instant.class),
+                        null
+                ))
                 .optional();
     }
 
@@ -69,15 +82,41 @@ public class SecretsJdbcRepository {
                 .optional();
     }
 
+    /*
+    * Here we separate the deletion queries for audit logging purposes. By running separate queries for CONSUMED rows,
+    * and EXPIRED rows, we can reason about WHY the row was deleted, and log it accordingly. Combining both filters
+    * in the WHERE clause left no obvious reason as to why the row was deleted.
+    */
+
     /**
-     * Sweep the database and remove any rows whose state is CONSUMED, or expiry date has already passed. Bounded to 5000/sweep.
-     * @return the number of rows deleted
+     * Sweep the database and remove any rows whose state is CONSUMED.
+     * Bounded to app.sweeper.pass-limit
+     * @return a list of IDs corresponding to the rows deleted
      */
-    public int deleteConsumedOrExpired() {
+    public List<String> deleteConsumed() {
         return jdbc.sql("""
                 DELETE FROM secrets
-                WHERE ctid IN (SELECT ctid FROM secrets WHERE state = 'CONSUMED' OR expires_at < now() LIMIT 5000);
+                WHERE ctid IN (SELECT ctid FROM secrets WHERE state = 'CONSUMED' LIMIT :limit)
+                RETURNING secret_id;
                 """)
-                .update();
+                .param("limit", appProperties.sweeper().passLimit())
+                .query(String.class)
+                .list();
+    }
+
+    /**
+     * Sweep the database and remove any rows whose expiry date has already passed.
+     * Bounded to app.sweeper.pass-limit
+     * @return a list of IDs corresponding to the rows deleted
+     */
+    public List<String> deleteExpired() {
+        return jdbc.sql("""
+                DELETE FROM secrets
+                WHERE ctid IN (SELECT ctid FROM secrets WHERE expires_at < now() LIMIT :limit)
+                RETURNING secret_id;
+                """)
+                .param("limit", appProperties.sweeper().passLimit())
+                .query(String.class)
+                .list();
     }
 }
