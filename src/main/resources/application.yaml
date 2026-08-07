@@ -21,3 +21,5 @@ app:
   ttl-options-seconds: "300,3600,86400,604800" # 5m, 1h, 24h, 7d
   sweeper:
     pass-limit: 2500
+    audit-log-retention: 90d
+    access-attempt-retention: 7d

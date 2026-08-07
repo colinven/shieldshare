@@ -2,6 +2,7 @@ package net.shieldshare.shieldshare.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -25,6 +26,10 @@ public record AppProperties(SizeCaps sizeCaps, List<Integer> ttlOptionsSeconds, 
 
     /**
      * @param passLimit the max number of rows the sweeper can delete in a single pass, per query.
+     * @param auditLogRetention how long a row in audit_logs is kept before the sweeper purges it
+     * @param accessAttemptRetention how long a row in unsuccessful_access_attempts is kept. Much
+     *                               shorter than the audit log window - failed fetches are mostly
+     *                               scanner noise and only stay useful while an incident is fresh.
      */
-    public record Sweeper(int passLimit) {}
+    public record Sweeper(int passLimit, Duration auditLogRetention, Duration accessAttemptRetention) {}
 }
