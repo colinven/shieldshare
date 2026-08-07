@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -57,7 +58,7 @@ class SecretsServiceTest {
         AppProperties properties = new AppProperties(
                 new AppProperties.SizeCaps(1_048_576L, 1_573_000L, MAX_BLOB_BYTES),
                 List.of(300, 3600, 86400, 604800),
-                new AppProperties.Sweeper(2500));
+                new AppProperties.Sweeper(2500, Duration.ofDays(90), Duration.ofDays(7)));
         secretsService = new SecretsService(secretsRepository, new SecureRandom(), properties, auditLog);
     }
 

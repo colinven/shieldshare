@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -69,7 +70,16 @@ class SecretsJdbcRepositoryIT extends AbstractPostgresIT {
     @BeforeEach
     void setUp() {
         jdbc.sql("TRUNCATE TABLE secrets").update();
-        Mockito.when(appProperties.sweeper()).thenReturn(new AppProperties.Sweeper(2500));
+        stubSweeper(2500);
+    }
+
+    /*
+     * Nothing in this class touches the audit log tables, so the retention windows here are just
+     * filler to satisfy the record. Only the pass limit matters.
+     */
+    private void stubSweeper(int passLimit) {
+        Mockito.when(appProperties.sweeper()).thenReturn(
+                new AppProperties.Sweeper(passLimit, Duration.ofDays(90), Duration.ofDays(7)));
     }
 
     private String stateOf(String id) {
@@ -388,7 +398,7 @@ class SecretsJdbcRepositoryIT extends AbstractPostgresIT {
      */
     @Test
     void sweepsDeleteNoMoreThanThePassLimitInOneGo() {
-        Mockito.when(appProperties.sweeper()).thenReturn(new AppProperties.Sweeper(2));
+        stubSweeper(2);
         for (int i = 0; i < 5; i++) {
             insertRaw("expired-" + i, "ACTIVE", "now() - interval '1 minute'");
             insertRaw("consumed-" + i, "CONSUMED", "now() + interval '1 hour'");
