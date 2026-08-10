@@ -23,3 +23,42 @@ app:
     pass-limit: 2500
     audit-log-retention: 90d
     access-attempt-retention: 7d
+  rate-limit:
+    # secret creation is not affected by circuit breaker
+    create:
+      requests:
+        capacity: 20
+        refill-tokens: 10
+        refill-period: 1m
+      bytes:
+        capacity: 4194304 # 4MiB burst
+        refill-tokens: 2097152 # 2MiB
+        refill-period: 1h
+    # lookup endpoints have a tighter limit when the circuit breaker is open
+    fetch:
+      closed:
+        capacity: 20
+        refill-tokens: 10
+        refill-period: 1m
+      open:
+        capacity: 3
+        refill-tokens: 3
+        refill-period: 1m
+    # secret validation is less strict than fetch: it is non-destructive, while fetch burns the record
+    validate:
+      closed:
+        capacity: 60
+        refill-tokens: 30
+        refill-period: 1m
+      open:
+        capacity: 5
+        refill-tokens: 5
+        refill-period: 1m
+    breaker:
+      miss-capacity: 300
+      miss-refill-period: 1m
+      cooldown: 5m
+      probing-capacity: 30
+    cache:
+      max-size: 100000
+      expire-after-access: 10m
