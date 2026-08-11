@@ -33,7 +33,7 @@ public class SecretsController {
         return ResponseEntity.ok(secretsService.validateSecret(secretId, http.getRemoteAddr()));
     }
 
-    @GetMapping("/fetch/{secretId}")
+    @PostMapping("/fetch/{secretId}")
     public ResponseEntity<SecretPayloadResponse> fetchSecret(@PathVariable String secretId,
                                                              HttpServletRequest http) {
         return ResponseEntity.ok(secretsService.fetchSecret(secretId, http.getRemoteAddr()));
