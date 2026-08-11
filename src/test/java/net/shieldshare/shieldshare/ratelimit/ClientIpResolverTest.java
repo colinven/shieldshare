@@ -3,6 +3,8 @@ package net.shieldshare.shieldshare.ratelimit;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClientIpResolverTest {
@@ -64,5 +66,11 @@ class ClientIpResolverTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr(null);
         assertThat(resolver.resolve(request)).isEqualTo("unresolvable");
+    }
+
+    @Test
+    void doesNotResolveInvalidStringsWithColons() {
+        assertThat(resolve("::::")).isEqualTo("unresolvable");
+        assertThat(resolve("1:2:zzz")).isEqualTo("unresolvable");
     }
 }

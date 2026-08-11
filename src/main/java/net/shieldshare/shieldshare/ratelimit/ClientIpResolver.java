@@ -1,5 +1,6 @@
 package net.shieldshare.shieldshare.ratelimit;
 
+import com.google.common.net.InetAddresses;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 
@@ -26,18 +27,18 @@ public class ClientIpResolver {
      * most modern OS.
      */
     private String normalize(String rawIp) {
-        if (!isIpLiteral(rawIp)) {
+        if (rawIp == null || rawIp.isBlank() || !InetAddresses.isInetAddress(rawIp)) {
             return UNRESOLVABLE_KEY;
         }
         try {
-            InetAddress address = InetAddress.getByName(rawIp);
+            InetAddress address = InetAddresses.forString(rawIp);
             if (!(address instanceof Inet6Address)) {
                 return address.getHostAddress();
             }
             byte[] prefix = address.getAddress();
             Arrays.fill(prefix, 8, 16, (byte) 0);
             return InetAddress.getByAddress(prefix).getHostAddress() + "/64";
-        } catch (UnknownHostException e) {
+        } catch (IllegalArgumentException | UnknownHostException e) {
             return UNRESOLVABLE_KEY;
         }
     }
@@ -50,17 +51,5 @@ public class ClientIpResolver {
     */
     private String extractRawIp(HttpServletRequest request) {
         return request.getRemoteAddr();
-    }
-
-    /**
-     * Guards {@link InetAddress#getByName(String)} from seeing a host name and issuing a DNS lookup.
-     */
-    private boolean isIpLiteral(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
-        }
-        return value.chars().allMatch(c ->
-                (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
-                || c == '.' || c == ':');
     }
 }
