@@ -127,12 +127,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     }
 
     /**
-     * Reject a request and send the client an error. Generates an {@code ErrorResponse} object with the provided
-     *
-     * @param response
-     * @param status
-     * @param message
-     * @throws IOException
+     * Write an {@code ErrorResponse} object with the provided {@code status} and {@code message} to the {@code response}
+     * output stream.
+     * @throws IOException when unable to write
      */
     private void reject(HttpServletResponse response, HttpStatus status, String message) throws IOException {
         response.setStatus(status.value());
