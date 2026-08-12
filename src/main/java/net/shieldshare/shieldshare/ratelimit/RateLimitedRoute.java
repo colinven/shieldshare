@@ -4,7 +4,7 @@ public enum RateLimitedRoute {
     CREATE,
     VALIDATE,
     FETCH,
-    NONE;
+    NONE; // Sentinel value to assign to @RateLimited's default value
 
     public boolean isLookup() {
         return this != CREATE;
