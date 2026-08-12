@@ -7,6 +7,8 @@ import net.shieldshare.shieldshare.dto.request.CreateSecretRequest;
 import net.shieldshare.shieldshare.dto.response.CreateSecretResponse;
 import net.shieldshare.shieldshare.dto.response.SecretPayloadResponse;
 import net.shieldshare.shieldshare.dto.response.SecretValidationResponse;
+import net.shieldshare.shieldshare.ratelimit.RateLimited;
+import net.shieldshare.shieldshare.ratelimit.RateLimitedRoute;
 import net.shieldshare.shieldshare.service.SecretsService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,18 +24,21 @@ public class SecretsController {
     private final SecretsService secretsService;
 
     @PostMapping("/create")
+    @RateLimited(route = RateLimitedRoute.CREATE)
     public ResponseEntity<CreateSecretResponse> createSecret(@Valid @RequestBody CreateSecretRequest request,
                                                              HttpServletRequest http) {
         return ResponseEntity.status(HttpStatus.CREATED).body(secretsService.createSecret(request, http.getRemoteAddr()));
     }
 
     @GetMapping("/validate/{secretId}")
+    @RateLimited(route = RateLimitedRoute.VALIDATE)
     public ResponseEntity<SecretValidationResponse> validateSecret(@PathVariable String secretId,
                                                                    HttpServletRequest http) {
         return ResponseEntity.ok(secretsService.validateSecret(secretId, http.getRemoteAddr()));
     }
 
     @PostMapping("/fetch/{secretId}")
+    @RateLimited(route = RateLimitedRoute.FETCH)
     public ResponseEntity<SecretPayloadResponse> fetchSecret(@PathVariable String secretId,
                                                              HttpServletRequest http) {
         return ResponseEntity.ok(secretsService.fetchSecret(secretId, http.getRemoteAddr()));
