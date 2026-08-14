@@ -23,7 +23,7 @@ public class RateLimitPolicy {
             case CREATE -> config.create().requests();
             case FETCH -> tierFor(config.fetch(), state);
             case VALIDATE -> tierFor(config.validate(), state);
-            case NONE -> null; // NONE get weeded out before they make it to this method
+            case NONE -> throw new IllegalArgumentException("Invalid route: " + route);
         });
     }
 
