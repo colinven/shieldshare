@@ -74,4 +74,9 @@ public class BucketRegistry {
                     : TokensInheritanceStrategy.AS_IS;
         };
     }
+
+    public long size() {
+        buckets.cleanUp();
+        return buckets.estimatedSize();
+    }
 }
