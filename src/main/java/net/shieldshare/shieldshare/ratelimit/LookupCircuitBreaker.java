@@ -63,7 +63,19 @@ public class LookupCircuitBreaker {
                 return state;
             }
             if (state == BreakerState.OPEN){
-                transitionTo(BreakerState.PROBING, config.probingCapacity());
+                /*
+                doubleCooldownHaElapsed() check reasoning:
+                If breaker was flipped to OPEN, and 2x the cooldown period has passed, state should be
+                set directly to CLOSED (enough time passed for both the OPEN *and* PROBING cooldown periods to end).
+                Without this, if the breaker is flipped to OPEN, the next request will read state=PROBING regardless of
+                if enough time has passed for state to have returned back to CLOSED. (state does not change on its own,
+                but rather only by invoking this method).
+                 */
+                if (doubleCooldownHasElapsed()) {
+                    transitionTo(BreakerState.CLOSED, config.missCapacity());
+                } else {
+                    transitionTo(BreakerState.PROBING, config.probingCapacity());
+                }
             } else {
                 transitionTo(BreakerState.CLOSED, config.missCapacity());
             }
@@ -80,6 +92,10 @@ public class LookupCircuitBreaker {
 
     private boolean cooldownHasNotEnded() {
         return timeMeter.currentTimeNanos() - stateEnteredNanos < config.cooldown().toNanos();
+    }
+
+    private boolean doubleCooldownHasElapsed() {
+        return timeMeter.currentTimeNanos() - stateEnteredNanos >= config.cooldown().toNanos() * 2;
     }
 
     private Bucket missBucketOf(long capacity) {
