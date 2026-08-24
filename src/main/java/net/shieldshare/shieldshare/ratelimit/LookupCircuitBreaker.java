@@ -5,6 +5,7 @@ import io.github.bucket4j.Bucket;
 import io.github.bucket4j.TimeMeter;
 import lombok.extern.slf4j.Slf4j;
 import net.shieldshare.shieldshare.config.AppProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -25,6 +26,7 @@ public class LookupCircuitBreaker {
         this.missBucket = missBucketOf(config.missCapacity());
     }
 
+    @Autowired
     public LookupCircuitBreaker(AppProperties appProperties, TimeMeter timeMeter) {
         this(appProperties.rateLimit().breaker(), timeMeter);
     }

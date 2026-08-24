@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.*;
 import net.shieldshare.shieldshare.config.AppProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,6 +13,7 @@ public class BucketRegistry {
     private final Cache<String, BucketWithState> buckets;
     private final TimeMeter timeMeter;
 
+    @Autowired
     public BucketRegistry(AppProperties appProperties, TimeMeter timeMeter) {
         this(appProperties.rateLimit().cache(), timeMeter);
     }
