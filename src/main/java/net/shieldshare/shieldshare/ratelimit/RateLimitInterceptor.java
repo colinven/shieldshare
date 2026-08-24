@@ -57,7 +57,12 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         }
 
         if (route == RateLimitedRoute.CREATE) {
-            ConsumptionProbe byteProbe = byteBucket(clientIp).getBucket().tryConsumeAndReturnRemaining(1);
+            long contentLength = request.getContentLengthLong();
+            if (contentLength < 0) {
+                reject(response, HttpStatus.LENGTH_REQUIRED, "Could not read content length");
+                return false;
+            }
+            ConsumptionProbe byteProbe = byteBucket(clientIp).getBucket().tryConsumeAndReturnRemaining(contentLength);
             if (!byteProbe.isConsumed()) {
                 reject(response, HttpStatus.TOO_MANY_REQUESTS, REJECTED_MESSAGE);
                 return false;
