@@ -1,18 +1,17 @@
 package net.shieldshare.shieldshare.ratelimit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bucket4j.ConsumptionProbe;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.shieldshare.shieldshare.config.AppProperties;
 import net.shieldshare.shieldshare.exception.ErrorResponse;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -23,7 +22,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     private static String REJECTED_MESSAGE = "Rate Limit Exceeded";
 
-    private final AppProperties.SizeCaps sizeCaps;
     private final BucketRegistry registry;
     private final ClientIpResolver ipResolver;
     private final LookupCircuitBreaker breaker;
@@ -33,15 +31,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request,
                              @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
-        //TODO: add some sort of FilterInputStream to count incoming bytes. Content-Length can be spoofed,
-        // and content length checks don't belong here anyways
-        long contentLength = request.getContentLengthLong();
-        if (contentLength < 0) {
-            reject(response, HttpStatus.LENGTH_REQUIRED, "Content-Length header required");
-        }
-        if (contentLength > sizeCaps.maxRequestBytes()) {
-            reject(response, HttpStatus.CONTENT_TOO_LARGE, "Content length exceeds 1.5MiB maximum");
-        }
 
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
