@@ -1,9 +1,11 @@
 package net.shieldshare.shieldshare.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -24,6 +27,7 @@ public class GlobalExceptionHandler {
     // Generic fallback handler for any exception not listed in this class
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        log.error("Generic exception handler was invoked. Unexpected error: {}", e.getMessage(), e);
         return generateErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e);
     }
 
@@ -74,5 +78,10 @@ public class GlobalExceptionHandler {
             root = cause;
         }
         return generateErrorResponse(HttpStatus.BAD_REQUEST, e);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
+        return generateErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, e);
     }
 }
