@@ -2,6 +2,7 @@ package net.shieldshare.shieldshare.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -53,5 +54,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidSecretException.class)
     public ResponseEntity<ErrorResponse> handleInvalidSecretException(InvalidSecretException e) {
         return generateErrorResponse(HttpStatus.NOT_FOUND, e);
+    }
+
+    /**
+     * This method handles the case where a request passes through
+     * {@link net.shieldshare.shieldshare.filter.payloadsize.RequestSizeFilter} and is oversized. Because the
+     * {@code OversizedPayloadException} gets thrown while Jackson is reading the input stream, Spring wraps the
+     * exception in an {@code HttpMessageNotReadableException}. Here, we walk the cause chain looking to see if it was
+     * caused by an {@code OversizedPayloadException}, and return 413 accordingly. Otherwise, we return 400.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        Throwable root = e;
+        while (root.getCause() != null) {
+            Throwable cause = root.getCause();
+            if (cause instanceof OversizedPayloadException ope) {
+                return generateErrorResponse(HttpStatus.CONTENT_TOO_LARGE, ope);
+            }
+            root = cause;
+        }
+        return generateErrorResponse(HttpStatus.BAD_REQUEST, e);
     }
 }
