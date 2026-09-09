@@ -29,6 +29,7 @@ class ConfigControllerTest {
                 new AppProperties.SizeCaps(MAX_CONTENT_BYTES, 1_573_000L, 1_052_701L),
                 TTL_OPTIONS,
                 null,
+                null,
                 null);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new ConfigController(props)).build();

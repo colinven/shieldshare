@@ -13,9 +13,19 @@ import java.util.List;
  * @param ttlOptionsSeconds the only TTL values a client is allowed to request
  * @param sweeper config values for the database sweeper
  * @param rateLimit config values for the rate limiter
+ * @param cors which browser origins are allowed to call this API
  */
 @ConfigurationProperties("app")
-public record AppProperties(SizeCaps sizeCaps, List<Integer> ttlOptionsSeconds, Sweeper sweeper, RateLimit rateLimit) {
+public record AppProperties(SizeCaps sizeCaps, List<Integer> ttlOptionsSeconds, Sweeper sweeper, RateLimit rateLimit,
+                            Cors cors) {
+
+    /**
+     * A deployment that never mentions {@code app.cors} binds the whole block as null. Default it to an
+     * empty allow-list so config readers can call {@code cors().allowedOrigins()} without a null check.
+     */
+    public AppProperties {
+        cors = cors == null ? new Cors(List.of()) : cors;
+    }
 
     /**
      * @param maxContentBytes plaintext cap, used for client-side UX only
@@ -84,5 +94,17 @@ public record AppProperties(SizeCaps sizeCaps, List<Integer> ttlOptionsSeconds, 
      */
     public record RateLimit(CreateLimits create, LookupLimits fetch, LookupLimits validate,
                             Breaker breaker, BucketCache cache) {}
+
+    /**
+     * The frontend is a separate origin, so the browser will not let it call this API unless we say so.
+     * @param allowedOrigins exact origins ("https://shieldshare.net"), no wildcards. An empty list turns
+     *                       CORS off entirely, which is the right default for an unconfigured deployment.
+     */
+    public record Cors(List<String> allowedOrigins) {
+
+        public Cors {
+            allowedOrigins = allowedOrigins == null ? List.of() : List.copyOf(allowedOrigins);
+        }
+    }
 
 }

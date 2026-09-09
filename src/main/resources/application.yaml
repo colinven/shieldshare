@@ -18,6 +18,11 @@ app:
     max-request-bytes: 1573000 # 1.5 MiB + headroom for base64 overhead, metadata, JSON envelope
     max-blob-bytes: 1052701 # 1 MiB + headroom (content, metadata, version byte, iv, GCM tag)
   encryption-version-byte: "0x00"
+  cors:
+    # exact origins the browser frontend is served from, comma separated. no wildcards.
+    # empty means no cross-origin caller is allowed at all, so every deployment must set this.
+    # override in prod with APP_CORS_ALLOWED_ORIGINS.
+    allowed-origins: "http://localhost:5173"
   ttl-options-seconds: "300,3600,86400,604800" # 5m, 1h, 24h, 7d
   sweeper:
     pass-limit: 2500

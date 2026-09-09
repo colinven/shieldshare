@@ -50,7 +50,8 @@ class AppPropertiesTest {
                     "app.rate-limit.breaker.probing-capacity=30",
                     "app.rate-limit.breaker.cooldown=5m",
                     "app.rate-limit.cache.max-size=100000",
-                    "app.rate-limit.cache.expire-after-access=10m");
+                    "app.rate-limit.cache.expire-after-access=10m",
+                    "app.cors.allowed-origins=https://shieldshare.example,http://localhost:5173");
 
     @Test
     void bindsSizeCapsFromTheAppConfigTree() {
@@ -115,6 +116,24 @@ class AppPropertiesTest {
             assertThat(rateLimit.cache().maxSize()).isEqualTo(100_000L);
             assertThat(rateLimit.cache().expireAfterAccess()).isEqualTo(Duration.ofMinutes(10));
         });
+    }
+
+    /*
+     * app.cors.allowed-origins is a comma-separated string like the TTL options, and an unset block has to
+     * land as an empty list rather than null - WebConfig reads it without a null check.
+     */
+    @Test
+    void bindsCommaSeparatedCorsOriginsIntoAList() {
+        runner.run(context -> assertThat(context.getBean(AppProperties.class).cors().allowedOrigins())
+                .containsExactly("https://shieldshare.example", "http://localhost:5173"));
+    }
+
+    @Test
+    void defaultsCorsOriginsToAnEmptyListWhenTheBlockIsAbsent() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(ConfigurationPropertiesAutoConfiguration.class))
+                .withUserConfiguration(EnableProps.class)
+                .run(context -> assertThat(context.getBean(AppProperties.class).cors().allowedOrigins()).isEmpty());
     }
 
     @EnableConfigurationProperties(AppProperties.class)
